@@ -1,0 +1,22 @@
+## Resolved Issues ##
+- **[1]** Player Controlled character
+- **[2]** Create tile map grid / system
+- **[3]** Enemies chase player (Dijkstras)
+- **[4]** Combat between enemy & player (player killed resets game, enemies are destroyed)
+- **[5]** Create 3 different levels
+- **[6]** Character can chrome shift Between Red & Blue
+ 				Blue Chrome moves faster but takes double damage
+				Red Chrome walks slower but heals each bullet
+				Yellow Chrome shoots fat big damgur bullets but at the cost of health
+				Green Chrome has piercing bullets but reduced range
+- **[7]** Create boss that paths and shoots at player
+- **[8]** Boss spawns enemies
+- **[9]** Create boss AoE Attack 
+
+
+
+
+## Open Issues ##
+- **[10]** combination color ultimate kill in each chrome to go ulti form
+- **[11]** Add timer for score 
+
