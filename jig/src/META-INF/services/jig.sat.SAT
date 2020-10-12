@@ -1,0 +1,4 @@
+# List instances of SAT implementations here
+
+jig.sat.SATImplementation
+jig.sat.AnotherSATImplementation

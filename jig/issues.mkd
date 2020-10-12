@@ -1,0 +1,6 @@
+# Pending #
+
+
+# Resolved #
+
+- **[1]** Resource loading breaks when path is not inferred
