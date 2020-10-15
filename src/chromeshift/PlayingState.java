@@ -7,6 +7,7 @@ import java.util.Random;
 
 import jig.Vector;
 import jig.Collision;
+import jig.ResourceManager;
 
 import org.newdawn.slick.Color;
 import org.newdawn.slick.GameContainer;
@@ -26,20 +27,26 @@ import org.newdawn.slick.state.StateBasedGame;
  */
 class PlayingState extends BasicGameState {
 	
+	Color redColor = new Color(255, 0, 0, 255);
+	Color orangeColor = new Color(255, 120, 0, 255);
 	//GameBoard gb;
 	boolean displayPath = false;
+	
+	int scoreTimer = 0;
+	int enemyKills = 0;
+	//int score = enemyKills / scoreTimer;
 	
 	int cooldownTimer = 120;
 	boolean cooldownReady = true;
 	
 	int totalEnemies = 20;
 	int spawnTimer = 1000;
-	boolean noEnemies = false;
+	//boolean noEnemies = false;
 	
 	int bulletDirection;
 	
-	int GreencooldownTimer = 240;
-	boolean GreencooldownReady = true;
+	int YellowShootCD = 240;
+	boolean YellowCDReady = true;
 
 	int bossShootTimer = 1000;
 	boolean bossShootCD = true;
@@ -48,9 +55,12 @@ class PlayingState extends BasicGameState {
 	int timePlayerInFire = 0;
 	boolean bossAoECD = false;
 	
+	int bossSpawnTimer = 10000;
+	
 	List<Integer> spawnTileList = Arrays.asList(0,11,96,107);
-	List<Integer> spawnTypeList2 = Arrays.asList(0,1);
-	List<Integer> spawnTypeList3 = Arrays.asList(0,1,2);
+	
+	List<Integer> spawnTypeList1 = Arrays.asList(0,1);
+	List<Integer> spawnTypeList2 = Arrays.asList(0,1,2);
 	
 	
 	@Override
@@ -66,8 +76,8 @@ class PlayingState extends BasicGameState {
 		cg.Remove_Enemies();
 		cg.Remove_Bullets();
 		cg.gb.clearFireArray();
-		cg.player.setPosition(cg.ScreenWidth/2, cg.ScreenHeight/3*2);
-		cg.player.health = 100;
+		cg.player.setPosition(cg.ScreenWidth/2, cg.BoardHeight/3*2);
+		cg.player.health = cg.player.maxHealth;
 		cg.player.SetChrome(1);
 		cg.Set_Current_Level(level);
 		cg.Create_Enemies(level);
@@ -75,6 +85,30 @@ class PlayingState extends BasicGameState {
 		//System.out.println("Setting level to " + cg.current_level);
 	}
 
+	public void render_health_bar(Graphics g, StateBasedGame game, Color hcolor, int left, int top, int width, int height, int phealthblocks, float healthPercent) {
+		//ChromeGame cg = (ChromeGame)game;
+		float margin = 2f;
+		
+		
+		Color blackColor = new Color(0, 0, 0, 255);
+		g.setColor(blackColor);
+		g.fillRect(left, top, width,  height);
+		g.setColor(hcolor);
+		g.drawRect((float)left+margin, (float)top+margin, (float)width-2*margin, (float)height-2*margin);
+		
+		
+		float block_width = ((float)width - 4*margin - (phealthblocks-1)*margin)/phealthblocks;
+		for( int x = 0; x < phealthblocks; x++) {
+			//float maxPlayerHealth = (float)cg.player.maxHealth;
+			
+			if( x >= healthPercent * phealthblocks ) {
+				break;
+			}
+			float leftx = (float)left + 2*margin + (float)x * (block_width+margin);
+			g.fillRect(leftx, (float)top + 2*margin, block_width, (float)height-4*margin);
+		}
+		
+	}
 	@Override
 	public void enter(GameContainer container, StateBasedGame game) {
 		container.setSoundOn(true);
@@ -86,11 +120,11 @@ class PlayingState extends BasicGameState {
 		
 		ChromeGame cg = (ChromeGame)game;
 		
-		/*for (Tile t : cg.gb.fire_tile_array) {
-			t.render(g);
-		} */
+		g.setAntiAlias(false);
 		
-		//cg.player.render(g);
+		Color greyColor = new Color(112, 128, 144, 255);
+		g.setColor(greyColor);
+		g.fillRect(0, cg.BoardHeight, cg.ScreenWidth,  100);
 		
 		Color pathColor = new Color(0, 255, 255, 255);
 		Color tileColor = new Color(255, 0, 0, 255);
@@ -155,11 +189,21 @@ class PlayingState extends BasicGameState {
 				}
 				g.setColor(oldColor);
 			}
-			g.drawString("Boss Health: " + cg.boss.health, 400, container.getHeight() - 50);
+			g.drawString("Boss Health: " + cg.boss.health, 450, container.getHeight() - 50);
 		}
 		
-		g.drawString("Health: " + cg.player.health, 100, container.getHeight() - 50);
-		g.drawString("Enemies Left: " + cg.enemy_array.size(), 950, container.getHeight() - 50);
+		float playerHealthPercent = (float)cg.player.health / (float)cg.player.maxHealth;
+		render_health_bar(g, cg, redColor, 100, container.getHeight() - 55, 300, 50, 20, playerHealthPercent);
+		g.drawString("Health: " + cg.player.health, 100, container.getHeight() - 75);
+		
+		if( cg.Get_Level() == 3 ) {
+			float bossHealthPercent = (float)cg.boss.health / (float)cg.boss.maxHealth;
+			render_health_bar(g, cg, orangeColor, 800, container.getHeight() - 55, 300, 50, 20, bossHealthPercent);
+			g.drawString("Boss Health " + cg.boss.health, 800, container.getHeight() - 75);
+		}
+		
+		
+		
 		
 	}
 
@@ -172,6 +216,10 @@ class PlayingState extends BasicGameState {
 		Vector new_velocity;
 		float speed = cg.player.speed;
 		
+		if (input.isKeyPressed(Input.KEY_G)) {
+			cg.player.godMode = !cg.player.godMode;
+		}
+		
 				
 		cooldownTimer -= delta;
 		if (cooldownTimer <= 0) {
@@ -179,10 +227,10 @@ class PlayingState extends BasicGameState {
 			cooldownTimer = 120;
 		}
 		
-		GreencooldownTimer -= delta;
-		if (GreencooldownTimer <= 0) {
-			GreencooldownReady = true;
-			GreencooldownTimer = 240;
+		YellowShootCD -= delta;
+		if (YellowShootCD <= 0) {
+			YellowCDReady = true;
+			YellowShootCD = 480;
 		}
 		
 		//Spawns enemies every second at random corners
@@ -191,35 +239,49 @@ class PlayingState extends BasicGameState {
 			if (cg.Get_Level() == 0) {
 				if (totalEnemies > 0) {
 					Random rand = new Random();
-					cg.Set_Enemy(0, cg.gb.getTileArray(), 
+					cg.Set_Enemy(spawnTypeList1.get(rand.nextInt(spawnTypeList1.size())), cg.gb.getTileArray(), 
 							spawnTileList.get(rand.nextInt(spawnTileList.size())));
+					System.out.println("enemy type is " + spawnTypeList1.get(rand.nextInt(spawnTypeList1.size()))); 
 					totalEnemies--;
 				}
 				spawnTimer = 1000;
 			} else if (cg.Get_Level() == 1) {
 				if (totalEnemies > 0) {
 					Random rand = new Random();
-					cg.Set_Enemy(spawnTypeList2.get(rand.nextInt(spawnTypeList2.size())), cg.gb.getTileArray(), 
+					cg.Set_Enemy(spawnTypeList1.get(rand.nextInt(spawnTypeList1.size())), cg.gb.getTileArray(), 
 							spawnTileList.get(rand.nextInt(spawnTileList.size())));
 					totalEnemies--;
 				}
 			} else if (cg.Get_Level() == 2) {
 				if (totalEnemies > 0) {
 					Random rand = new Random();
-					cg.Set_Enemy(spawnTypeList3.get(rand.nextInt(spawnTypeList3.size())), cg.gb.getTileArray(), 
+					cg.Set_Enemy(spawnTypeList2.get(rand.nextInt(spawnTypeList2.size())), cg.gb.getTileArray(), 
 							spawnTileList.get(rand.nextInt(spawnTileList.size())));
 					totalEnemies--;
 				}
 			} /*else if (cg.Get_Level() == 3) {
 				if (totalEnemies > 0) {
 					Random rand = new Random();
-					cg.Set_Enemy(spawnTypeList3.get(rand.nextInt(spawnTypeList3.size())), cg.gb.getTileArray(), 
+					cg.Set_Enemy(spawnTypeList2.get(rand.nextInt(spawnTypeList2.size())), cg.gb.getTileArray(), 
 							spawnTileList.get(rand.nextInt(spawnTileList.size())));
 					totalEnemies--;
-				}
+				
 			} */
 			
 			spawnTimer = 1000;
+		}
+		
+		if (cg.Get_Level() == 3) {
+			bossSpawnTimer -= delta;
+			if (bossSpawnTimer <= 0) {
+				if (totalEnemies > 0) {
+					Random rand = new Random();
+					cg.Set_Enemy(spawnTypeList2.get(rand.nextInt(spawnTypeList2.size())), cg.gb.getTileArray(), 
+							spawnTileList.get(rand.nextInt(spawnTileList.size())));
+					totalEnemies--;
+				}
+				bossSpawnTimer = 10000;
+			}
 		}
 			
 		//Code to vizualize pathing
@@ -231,26 +293,26 @@ class PlayingState extends BasicGameState {
 		//Cheat to switch level
 		if( (input.isKeyDown(Input.KEY_8))) {
 			Reset_Everything(0,cg);
-			cg.enterState(ChromeGame.STARTUPSTATE);
+			cg.enterState(ChromeGame.LEVELTRANSSTATE);
 		} else if( (input.isKeyDown(Input.KEY_9))) {
 			Reset_Everything(1,cg);
-			cg.enterState(ChromeGame.STARTUPSTATE);
+			cg.enterState(ChromeGame.LEVELTRANSSTATE);
 		} else if( (input.isKeyDown(Input.KEY_0))) {
 			Reset_Everything(2,cg);
 			System.out.println("level is " + cg.Get_Level());
-			cg.enterState(ChromeGame.STARTUPSTATE);
+			cg.enterState(ChromeGame.LEVELTRANSSTATE);
 		} else if( (input.isKeyDown(Input.KEY_7))) {
 			cg.Remove_Barriers();
 			cg.Remove_Enemies();
 			cg.Remove_Bullets();
-			cg.player.setPosition(cg.ScreenWidth/2, cg.ScreenHeight/3*2);
-			cg.player.health = 100;
+			cg.player.setPosition(cg.ScreenWidth/2, cg.BoardHeight/3*2);
+			cg.player.health = cg.player.maxHealth;
 			cg.player.SetChrome(1);
 			cg.Set_Current_Level(3);
 			cg.Create_Enemies(3);
 			totalEnemies = 20;
 			System.out.println("level is " + cg.Get_Level());
-			cg.enterState(ChromeGame.STARTUPSTATE);
+			cg.enterState(ChromeGame.LEVELTRANSSTATE);
 		}
 		
 		
@@ -261,7 +323,7 @@ class PlayingState extends BasicGameState {
 			       (cg.player.getX() > 25) ) {		
 			new_velocity = new Vector(-0.5f*speed, 0f);
 		} else if ((input.isKeyDown(Input.KEY_S)) && 
-				   (cg.player.getY() < cg.ScreenHeight - 25 - 1)) {			
+				   (cg.player.getY() < cg.BoardHeight - 25 - 1)) {			
 			new_velocity = new Vector(0f, 0.5f*speed);
 		} else if ((input.isKeyDown(Input.KEY_D)) &&
 				   (cg.player.getX() < cg.ScreenWidth - 25 - 1)){			
@@ -282,33 +344,56 @@ class PlayingState extends BasicGameState {
 			cg.player.SetChrome(4);
 		}
 		
-		//Code to shoot
+		//Code to shoot		
+		/*if(input.isKeyPressed(Input.KEY_I) && cooldownReady) {	
+			cg.player.Shoot(0, cg.player.chromeColor, cg);
+			cooldownReady = false;
+		} else if (input.isKeyPressed(Input.KEY_J) && cooldownReady) {		
+			cg.player.Shoot(3, cg.player.chromeColor, cg);
+			cooldownReady = false;
+		} else if (input.isKeyPressed(Input.KEY_K) && cooldownReady) {			
+			cg.player.Shoot(2, cg.player.chromeColor, cg);	
+			cooldownReady = false;
+		} else if (input.isKeyPressed(Input.KEY_L) && cooldownReady){			
+			cg.player.Shoot(1, cg.player.chromeColor, cg);
+			cooldownReady = false;
+		} */
+		
+		//USED TO TEST INCREASED GREEN CHROME SHOOTING CD
 		if (cg.player.chromeColor == 4) {
-			if(input.isKeyPressed(Input.KEY_I) && GreencooldownReady) {	
+			if(input.isKeyPressed(Input.KEY_I) && YellowCDReady) {	
 				cg.player.Shoot(0, cg.player.chromeColor, cg);
-				GreencooldownReady = false;
-			} else if (input.isKeyPressed(Input.KEY_J) && GreencooldownReady) {		
+				ResourceManager.getSound(ChromeGame.SUN_PEW_RSC).play(0.5f,1);
+				YellowCDReady = false;
+			} else if (input.isKeyPressed(Input.KEY_J) && YellowCDReady) {		
 				cg.player.Shoot(3, cg.player.chromeColor, cg);
-				GreencooldownReady = false;
-			} else if (input.isKeyPressed(Input.KEY_K) && GreencooldownReady) {			
+				ResourceManager.getSound(ChromeGame.SUN_PEW_RSC).play(0.5f,1);
+				YellowCDReady = false;
+			} else if (input.isKeyPressed(Input.KEY_K) && YellowCDReady) {			
 				cg.player.Shoot(2, cg.player.chromeColor, cg);	
-				GreencooldownReady = false;
-			} else if (input.isKeyPressed(Input.KEY_L) && GreencooldownReady){			
+				ResourceManager.getSound(ChromeGame.SUN_PEW_RSC).play(0.5f,1);
+				YellowCDReady = false;
+			} else if (input.isKeyPressed(Input.KEY_L) && YellowCDReady){			
 				cg.player.Shoot(1, cg.player.chromeColor, cg);
-				GreencooldownReady = false;
+				ResourceManager.getSound(ChromeGame.SUN_PEW_RSC).play(0.5f,1);
+				YellowCDReady = false;
 			}
 		} else {
 			if(input.isKeyPressed(Input.KEY_I) && cooldownReady) {	
 				cg.player.Shoot(0, cg.player.chromeColor, cg);
+				ResourceManager.getSound(ChromeGame.PEW_RSC).play(1, 1);
 				cooldownReady = false;
 			} else if (input.isKeyPressed(Input.KEY_J) && cooldownReady) {		
 				cg.player.Shoot(3, cg.player.chromeColor, cg);
+				ResourceManager.getSound(ChromeGame.PEW_RSC).play(1, 1);
 				cooldownReady = false;
 			} else if (input.isKeyPressed(Input.KEY_K) && cooldownReady) {			
-				cg.player.Shoot(2, cg.player.chromeColor, cg);	
+				cg.player.Shoot(2, cg.player.chromeColor, cg);
+				ResourceManager.getSound(ChromeGame.PEW_RSC).play(1, 1);
 				cooldownReady = false;
 			} else if (input.isKeyPressed(Input.KEY_L) && cooldownReady){			
 				cg.player.Shoot(1, cg.player.chromeColor, cg);
+				ResourceManager.getSound(ChromeGame.PEW_RSC).play(1, 1);
 				cooldownReady = false;
 			}
 		}
@@ -320,8 +405,8 @@ class PlayingState extends BasicGameState {
 			cg.player.setPosition(cg.ScreenWidth - 25 - 1, cg.player.getY());			
 		} else if (cg.player.getY() < 25) {			
 			cg.player.setPosition(cg.player.getX(), 25);			
-		} else if (cg.player.getY() > cg.ScreenHeight - 25 - 1) {			
-			cg.player.setPosition(cg.player.getX(), cg.ScreenHeight - 25 - 1);			
+		} else if (cg.player.getY() > cg.BoardHeight - 25 - 1) {			
+			cg.player.setPosition(cg.player.getX(), cg.BoardHeight - 25 - 1);			
 		}
 		
 		//Stops players from entering blocked tiles
@@ -376,8 +461,8 @@ class PlayingState extends BasicGameState {
 				e.setPosition(cg.ScreenWidth - 30, e.getY());				
 			} else if (e.getY() < 25 - 1) {				
 				e.setPosition(e.getX(), 30);				
-			} else if (e.getY() > cg.ScreenHeight - 26) {				
-				e.setPosition(e.getX(), cg.ScreenHeight - 30);				
+			} else if (e.getY() > cg.BoardHeight - 26) {				
+				e.setPosition(e.getX(), cg.BoardHeight - 30);				
 			}
 			
 			//Code if enemy collides with barrier
@@ -403,7 +488,9 @@ class PlayingState extends BasicGameState {
 			
 			//Removes enemy if health drops to 0
 			if(e.health <= 0) {
+				ResourceManager.getSound(ChromeGame.ENEMY_DYING_RSC).play(1,0.2f);
 				if (cg.enemy_array.size() != 0) {
+					
 					enemyIter.remove();
 				}
 			}
@@ -412,6 +499,7 @@ class PlayingState extends BasicGameState {
 			Collision player_collision = e.collides(cg.player);
 			if (player_collision != null) {
 				//Player takes double damage in blue chrome
+				ResourceManager.getSound(ChromeGame.ENEMY_DYING_RSC).play(1,1);
 				if (cg.player.chromeColor == 1) {
 					cg.player.health -= e.damage *2;
 				} else {
@@ -436,6 +524,9 @@ class PlayingState extends BasicGameState {
 			Bullet b = bulletIter.next();
 			//bullet collision code
 			
+			if (cg.player.godMode == true) {
+				b.damage = 300;
+			}
 			//Code if bullet hits barrier
 			for (Tile t : cg.gb.getBlockedTileArray()) {
 				Collision c = b.collides(t);
@@ -447,32 +538,22 @@ class PlayingState extends BasicGameState {
 				}
 			}
 			
-			/*if (b.type == 4) {					
-				//removes green bullet after delta amount of time
-				b.lifeTime -= delta;
-				if (b.lifeTime <= 0) {
-					b.setPosition(cg.player.getX(), cg.player.getY());
-					try {
-						bulletIter.remove();
-					} catch (Exception except) {
-						System.out.println("caught exception with bullet hitting enemy error " + except);
-					}
-				}
-			} */
-			
 			//Code if bullet hits enemy
 			for (Enemy e : cg.enemy_array) {
 				Collision c = b.collides(e);
 				//boolean enemy_hit = false;				
 				if (c != null) {					
 					//if red chrome add health
-					if (cg.player.chromeColor == 2) {
+					/*if (cg.player.chromeColor == 2) {
 						cg.player.AddHealth();
-					}					
-					//green bullets only last a second					
+					} */					
+					
 					//if enemy has already been damaged by bullet "b" and 
-					if (b.type != 4) {
+					if (b.type != 3) {
 						e.health -= b.damage;
+						if (cg.player.chromeColor == 2) {
+							cg.player.AddHealth();
+						}
 						if (cg.bullet_array.size() != 0) {
 							b.setPosition(cg.player.getX(), cg.player.getY());
 							try {
@@ -487,16 +568,16 @@ class PlayingState extends BasicGameState {
 				}
 			}
 			
+			//Player bullets hit Boss
 			if (cg.Get_Level() == 3) {
 				Collision c = b.collides(cg.boss);
-				if (c != null) {					
-					if (cg.player.chromeColor == 2) {
-						cg.player.AddHealth();
-					}					
-					//green bullets only last a second					
+				if (c != null) {										
 					//if enemy has already been damaged by bullet "b" and 
-					if (b.type != 4) {
+					if (b.type != 3) {
 						cg.boss.health -= b.damage;
+						if (cg.player.chromeColor == 2) {
+							cg.player.AddHealth();
+						}
 						if (cg.bullet_array.size() != 0) {
 							b.setPosition(cg.player.getX(), cg.player.getY());
 							try {
@@ -524,7 +605,7 @@ class PlayingState extends BasicGameState {
 				if (cg.bullet_array.size() != 0) {
 					bulletIter.remove();
 				}					
-			} else if (b.getY() > cg.ScreenHeight - 26) {				
+			} else if (b.getY() > cg.BoardHeight - 26) {				
 				if (cg.bullet_array.size() != 0) {
 					bulletIter.remove();
 				}				
@@ -571,11 +652,6 @@ class PlayingState extends BasicGameState {
 				
 			}
 			
-			/*
-			 * int bossAoETimer = 5000;
-				int timePlayerInFire = 0;
-				boolean bossAoECD = false;
-			 */
 			//BOSS AOE ATTACK
 			
 			bossAoETimer -= delta;
@@ -613,9 +689,9 @@ class PlayingState extends BasicGameState {
 				if (c != null) {
 					//boss collides with player
 					if (cg.player.chromeColor == 1) {
-						cg.player.health -= cg.boss.damage * 2;
+						cg.player.health -= bb.damage * 2;
 					} else {
-						cg.player.health -= cg.boss.damage;
+						cg.player.health -= bb.damage;
 					}
 					if (cg.boss_bullet_array.size() != 0) {
 						bb.setPosition(cg.boss.getX(), cg.boss.getY());
@@ -641,7 +717,7 @@ class PlayingState extends BasicGameState {
 					if (cg.boss_bullet_array.size() != 0) {
 						boss_bulletIter.remove();
 					}					
-				} else if (bb.getY() > cg.ScreenHeight - 26) {				
+				} else if (bb.getY() > cg.BoardHeight - 26) {				
 					if (cg.boss_bullet_array.size() != 0) {
 						boss_bulletIter.remove();
 					}				
@@ -651,11 +727,9 @@ class PlayingState extends BasicGameState {
 			
 			bossShootTimer -= delta;
 			if (bossShootTimer <= 0) {
-				bossShootCD = true;
-				System.out.println("boss bullet array size is " + cg.boss_bullet_array.size());
+				//bossShootCD = true;
 				cg.boss.Shoot(cg);
-				//System.out.println("boss after shot");
-				bossShootCD = false;
+				//bossShootCD = false;
 				bossShootTimer = 5000;
 			}
 			
@@ -666,12 +740,12 @@ class PlayingState extends BasicGameState {
 				cg.boss.setPosition(cg.ScreenWidth - 30, cg.boss.getY());				
 			} else if (cg.boss.getY() < 25 - 1) {				
 				cg.boss.setPosition(cg.boss.getX(), 30);				
-			} else if (cg.boss.getY() > cg.ScreenHeight - 26) {				
-				cg.boss.setPosition(cg.boss.getX(), cg.ScreenHeight - 30);				
+			} else if (cg.boss.getY() > cg.BoardHeight - 26) {				
+				cg.boss.setPosition(cg.boss.getX(), cg.BoardHeight - 30);				
 			}
 			
 			if (cg.Get_Level() >= 3 && cg.boss.health <= 0) {				
-				cg.enterState(ChromeGame.GAMEOVERSTATE);
+				cg.enterState(ChromeGame.GAMEWINSTATE);
 			}		
 			cg.boss.update(delta);
 		}
@@ -686,11 +760,11 @@ class PlayingState extends BasicGameState {
 		//if no more enemies, go next level
 		if(cg.enemy_array.size() == 0 && cg.Get_Level() <= 2) {		
 			Reset_Everything(cg.Get_Level()+1,cg);
-			cg.enterState(ChromeGame.STARTUPSTATE);
+			cg.enterState(ChromeGame.LEVELTRANSSTATE);
 		}
 		
-		if (cg.player.health >= 100) {
-			cg.player.health = 100;
+		if (cg.player.health >= cg.player.maxHealth) {
+			cg.player.health = cg.player.maxHealth;
 		}
 		cg.player.update(delta);		
 	}

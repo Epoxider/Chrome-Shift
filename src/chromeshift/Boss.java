@@ -15,6 +15,7 @@ public class Boss extends Entity {
 	
 	public float speed;
 	public int health;
+	public int maxHealth = 4000;
 	boolean shootReady;
 	boolean bossAoEdir = true;
 	int shootCD;
@@ -28,7 +29,7 @@ public class Boss extends Entity {
 		super(x, y);
 		this.shootCD = 1000;
 		this.shootReady = true;
-		this.health = 2000;
+		this.health = this.maxHealth;
 		this.damage = 80;
 		this.speed = 0.05f;		
 		addImageWithBoundingBox(ResourceManager.getImage(ChromeGame.BOSS_RSC));
@@ -43,7 +44,8 @@ public class Boss extends Entity {
 		Vector target_pos = cg.player.getPosition();
 		Vector enemy_pos = new Vector(this.getX(), this.getY());					
 		Vector unit_vector = new Vector(target_pos.getX() - enemy_pos.getX(), 
-				target_pos.getY() - enemy_pos.getY());						
+				target_pos.getY() - enemy_pos.getY());
+		//scale the velocity of boss's bullets
 		bullet.setVelocity(new Vector(unit_vector.getX(), unit_vector.getY()).scale(0.0008f));
 		System.out.println("boss bullet speed is " + bullet.getVelocity());
 		cg.boss_bullet_array.add(bullet);

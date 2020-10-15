@@ -47,7 +47,9 @@ public class ChromeGame extends StateBasedGame {
 	public static final int STARTUPSTATE = 0;
 	public static final int PLAYINGSTATE = 1;
 	public static final int GAMEOVERSTATE = 2;
-	public static final int TUTORIALSTATE = 3;
+	public static final int GAMEWINSTATE = 3;
+	public static final int LEVELTRANSSTATE = 4;
+	
 	public static final int MAXLEVEL = 4;
 	
 	public static final String RED_CHROME_RSC = "chromeshift/resource/red_chrome.png";
@@ -67,14 +69,34 @@ public class ChromeGame extends StateBasedGame {
 	//public static final String TILE_TEST_RSC = "chromeshift/resource/tile_test.png";
 	public static final String WALL1_RSC = "chromeshift/resource/wall1.png";
 	public static final String FIRE_TILE_RSC = "chromeshift/resource/fire_tile.png";
+	
 	public static final String START_UP_RSC = "chromeshift/resource/StartUp.png";
+	public static final String VICTORY_RSC = "chromeshift/resource/victory.png";
+	public static final String YOU_DIED_RSC = "chromeshift/resource/you_died.png";
 	public static final String GAMEPLAY_TUT_RSC = "chromeshift/resource/gameplay_tut.png";
 	public static final String SHIFT_TUT_RSC = "chromeshift/resource/shift_tut.png";
 	public static final String CONTROL_TUT_RSC = "chromeshift/resource/controls_tut.png";
 	public static final String ENEMY_TUT_RSC = "chromeshift/resource/enemy_tut.png";
+	public static final String LEVEL1_RSC = "chromeshift/resource/level1.png";
+	public static final String LEVEL2_RSC = "chromeshift/resource/level2.png";
+	public static final String LEVEL3_RSC = "chromeshift/resource/level3.png";
+	public static final String CHAD_TRANS_RSC = "chromeshift/resource/ChadTrans.png";
+	
+	
+	//SOUNDS
+	public static final String PEW_RSC = "chromeshift/resource/bit_lazer.wav";
+	public static final String SUN_PEW_RSC = "chromeshift/resource/SunShot.wav";
+	public static final String CHROME_SONG_RSC = "chromeshift/resource/ChromeSong.wav";
+	public static final String ENEMY_DYING_RSC = "chromeshift/resource/enemyDying.wav";
+	
+	
 
-	public int ScreenWidth = 1200;
-	public int ScreenHeight = 900;
+	public static int MaxScreenWidth = 1200;
+	public static int MaxScreenHeight = 1000;
+	public static int BotMargin = 100;
+	public int ScreenWidth = MaxScreenWidth;
+	public int ScreenHeight = MaxScreenHeight;
+	public int BoardHeight = ScreenHeight - BotMargin;
 	int current_level;
 	int tilesWide = 12;
 	int tilesHigh = 9;
@@ -112,13 +134,14 @@ public class ChromeGame extends StateBasedGame {
 		addState(new StartUpState());
 		addState(new GameOverState());
 		addState(new PlayingState());
-		addState(new TutorialState());
+		addState(new GameWinState());
+		addState(new LevelTransState());
 		
 		current_level = 0;
 		enemy_array = new ArrayList<Enemy>();
 		bullet_array = new ArrayList<Bullet>();
 		boss_bullet_array = new ArrayList<BossBullet>();
-		gb = new GameBoard(0, 0, ScreenWidth, ScreenHeight, tilesWide, tilesHigh, enemy_array);
+		gb = new GameBoard(0, BotMargin, ScreenWidth, ScreenHeight, tilesWide, tilesHigh, enemy_array);
 
 		
 		// the sound resource takes a particularly long time to load,
@@ -127,7 +150,10 @@ public class ChromeGame extends StateBasedGame {
 		// unless that is done now, we can't *disable* sound as we
 		// attempt to do in the startUp() method.
 		
-		//ResourceManager.loadSound(BANG_EXPLOSIONSND_RSC);
+		ResourceManager.loadSound(PEW_RSC);
+		ResourceManager.loadSound(SUN_PEW_RSC);
+		ResourceManager.loadSound(CHROME_SONG_RSC);
+		ResourceManager.loadSound(ENEMY_DYING_RSC);
 		
 
 		// preload all the resources to avoid warnings & minimize latency...
@@ -141,7 +167,6 @@ public class ChromeGame extends StateBasedGame {
 		ResourceManager.loadImage(GREEN_BULLET_RSC);
 		ResourceManager.loadImage(BLUE_BULLET_RSC);
 		ResourceManager.loadImage(SUN_BULLET_RSC);
-		//ResourceManager.loadImage(TILE_TEST_RSC);
 		ResourceManager.loadImage(ENEMY1_RSC);
 		ResourceManager.loadImage(ENEMY2_RSC);
 		ResourceManager.loadImage(ENEMY3_RSC);
@@ -150,10 +175,16 @@ public class ChromeGame extends StateBasedGame {
 		ResourceManager.loadImage(WALL1_RSC);
 		ResourceManager.loadImage(FIRE_TILE_RSC);
 		ResourceManager.loadImage(START_UP_RSC);
+		ResourceManager.loadImage(VICTORY_RSC);
+		ResourceManager.loadImage(YOU_DIED_RSC);
 		ResourceManager.loadImage(GAMEPLAY_TUT_RSC);
 		ResourceManager.loadImage(SHIFT_TUT_RSC);
 		ResourceManager.loadImage(CONTROL_TUT_RSC);
 		ResourceManager.loadImage(ENEMY_TUT_RSC);
+		ResourceManager.loadImage(LEVEL1_RSC);
+		ResourceManager.loadImage(LEVEL2_RSC);
+		ResourceManager.loadImage(LEVEL3_RSC);
+		ResourceManager.loadImage(CHAD_TRANS_RSC);
 		
 		player = new Player(ScreenWidth / 2, ScreenHeight / 3 * 2);
 		Create_Enemies(current_level);
@@ -161,14 +192,22 @@ public class ChromeGame extends StateBasedGame {
 	}
 	
 	
+	//Spawns an enemy on a given tile, if player is on that tile, spawn on 1st tile
 	public void Set_Enemy(int type, ArrayList<Tile>tile_array, int ...tiles) {
 		for(int i : tiles) {
 			Tile e_tile = tile_array.get(i);
-			Enemy enemy = new Enemy(e_tile.getX(), e_tile.getY(), type);
-			enemy_array.add(enemy);
+			Tile safe_tile = tile_array.get(6);
+			if (e_tile != gb.getTile(player.getX(), player.getY())) {
+				Enemy enemy = new Enemy(e_tile.getX(), e_tile.getY(), type);
+				enemy_array.add(enemy);
+			} else {			
+				Enemy enemy = new Enemy(safe_tile.getX(), safe_tile.getY(), type);
+				enemy_array.add(enemy);
+			}
 		}
 	}
 	
+	//Creates levels by setting barriers and enemies per level
 	public void Create_Enemies(int level) {
 		if (level == 0) {
 			gb.createBarrier(13,14,21,22,25,26,33,34,73,74,81,82,85,86,93,94);
@@ -238,8 +277,8 @@ public class ChromeGame extends StateBasedGame {
 	public static void main(String[] args) {
 		AppGameContainer app;
 		try {
-			app = new AppGameContainer(new ChromeGame("Chrome Shift!", 1200, 900));
-			app.setDisplayMode(1200, 900, false);
+			app = new AppGameContainer(new ChromeGame("Chrome Shift!", MaxScreenWidth, MaxScreenHeight));
+			app.setDisplayMode(MaxScreenWidth, MaxScreenHeight, false);
 			app.setVSync(true);
 			app.start();
 		} catch (SlickException e) {

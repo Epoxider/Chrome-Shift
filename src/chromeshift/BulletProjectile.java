@@ -19,24 +19,24 @@ import jig.Vector;
 
 	public Bullet(int direction, int chrome) {
 		//addImageWithBoundingBox(ResourceManager.getImage(ChromeGame.BULLET_RSC));
-		if (chrome == 3) {
+		if (chrome == 4) {
 			type = chrome;
 			addImageWithBoundingBox(ResourceManager.getImage(ChromeGame.SUN_BULLET_RSC));
-			this.damage = 100;
+			this.damage = 400;
 			if (direction == 0) {
-				velocity = new Vector(0f, -0.5f);
+				velocity = new Vector(0f, -0.3f);
 			} else if (direction == 1) {
-				velocity = new Vector(0.5f, 0f);
+				velocity = new Vector(0.3f, 0f);
 			} else if (direction == 2) {
-				velocity = new Vector(0f, 0.5f);
+				velocity = new Vector(0f, 0.3f);
 			} else if (direction == 3) {
-				velocity = new Vector(-0.5f, 0f);
+				velocity = new Vector(-0.3f, 0f);
 			}
-		} else if (chrome == 4)  {
+		} else if (chrome == 3)  {
 			type = chrome;
 			addImageWithBoundingBox(ResourceManager.getImage(ChromeGame.GREEN_BULLET_RSC));
 			lifeTime = 250;
-			this.damage = 5;
+			this.damage = 3;
 			if (direction == 0) {
 				velocity = new Vector(0f, -1f);
 			} else if (direction == 1) {

@@ -20,6 +20,13 @@ import org.newdawn.slick.state.StateBasedGame;
  * Transitions To PlayingState
  */
 class StartUpState extends BasicGameState {
+	
+	boolean gameplayTut = false;
+	boolean controlTut = false;
+	boolean shiftTut = false;
+	boolean enemyTut = false;
+	boolean readyToPlay = false;
+	boolean showTitle = true;
 
 	@Override
 	public void init(GameContainer container, StateBasedGame game)
@@ -30,7 +37,15 @@ class StartUpState extends BasicGameState {
 	public void enter(GameContainer container, StateBasedGame game) {
 		container.setSoundOn(true);
 		
-		container.setSoundOn(true);
+		if (!ResourceManager.getSound(ChromeGame.CHROME_SONG_RSC).playing()) {
+			ResourceManager.getSound(ChromeGame.CHROME_SONG_RSC).play(1, 0.5f);
+		}
+		
+		gameplayTut = false;
+		controlTut = false;
+		shiftTut = false;
+		enemyTut = false;
+		showTitle = true;
 		
 	}
 
@@ -38,13 +53,27 @@ class StartUpState extends BasicGameState {
 	@Override
 	public void render(GameContainer container, StateBasedGame game,
 			Graphics g) throws SlickException {
+				
+		if (gameplayTut) {
+			g.clear();
+			g.drawImage(ResourceManager.getImage(ChromeGame.GAMEPLAY_TUT_RSC), 0, 0);
+		} else if (controlTut) {
+			g.clear();
+			g.drawImage(ResourceManager.getImage(ChromeGame.CONTROL_TUT_RSC), 0, 0);
+		} else if (shiftTut) {
+			g.clear();
+			g.drawImage(ResourceManager.getImage(ChromeGame.SHIFT_TUT_RSC), 0, 0);
+		} else if (enemyTut) {
+			g.clear();
+			g.drawImage(ResourceManager.getImage(ChromeGame.ENEMY_TUT_RSC), 0, 0);
+		} else if (showTitle) {
+			//g.drawString("Press space", 550, 200);
+			g.drawImage(ResourceManager.getImage(ChromeGame.START_UP_RSC), 0, 0);
+		}
 		
-		ChromeGame cg = (ChromeGame)game;
-		
-		cg.player.render(g);
 		//cg.player = new Player(cg.ScreenWidth /2, cg.ScreenHeight /3 * 2);
-		g.drawString("Press space", 550, 200);
-		g.drawImage(ResourceManager.getImage(ChromeGame.START_UP_RSC), 0, 0);
+		//g.drawString("Press space", 550, 200);
+		//g.drawImage(ResourceManager.getImage(ChromeGame.START_UP_RSC), 0, 0);
 		
 
 	}
@@ -59,9 +88,36 @@ class StartUpState extends BasicGameState {
 		if (input.isKeyDown(Input.KEY_SPACE)) {
 			cg.enterState(ChromeGame.PLAYINGSTATE);
 		} else if (input.isKeyDown(Input.KEY_TAB)) {
-			cg.enterState(ChromeGame.TUTORIALSTATE);
+			gameplayTut = false;
+			controlTut = false;
+			shiftTut = false;
+			enemyTut = false;
+			showTitle = true;
+		} else if (input.isKeyDown(Input.KEY_1)) {
+			gameplayTut = true;
+			controlTut = false;
+			shiftTut = false;
+			enemyTut = false;
+			showTitle = false;
+		} else if (input.isKeyDown(Input.KEY_2)) {
+			gameplayTut = false;
+			controlTut = true;
+			shiftTut = false;
+			enemyTut = false;
+			showTitle = false;
+		} else if (input.isKeyDown(Input.KEY_3)) {
+			gameplayTut = false;
+			controlTut = false;
+			shiftTut = true;
+			enemyTut = false;
+			showTitle = false;
+		} else if (input.isKeyDown(Input.KEY_4)) {
+			gameplayTut = false;
+			controlTut = false;
+			shiftTut = false;
+			enemyTut = true;
+			showTitle = false;
 		}
-		
 		
 	}
 

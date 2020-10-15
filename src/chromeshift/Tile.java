@@ -20,6 +20,8 @@ public class Tile extends Entity {
 		this.setCoarseGrainedMaxX(width/2);
 		this.setCoarseGrainedMaxY(height/2);
 		this.setScale(1f);
+		
+		this.antiAliasing = false;
 
 		
 		this.tile_ID = Tile_ID;

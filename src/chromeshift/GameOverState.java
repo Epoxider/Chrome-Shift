@@ -8,6 +8,8 @@ import org.newdawn.slick.state.StateBasedGame;
 import org.newdawn.slick.state.transition.EmptyTransition;
 import org.newdawn.slick.state.transition.HorizontalSplitTransition;
 
+import jig.ResourceManager;
+
 
 /**
  * This state is active when the Game is over. In this state, the ball is
@@ -34,13 +36,15 @@ class GameOverState extends BasicGameState {
 		timer = 3000;
 		container.setSoundOn(true);
 		
+		System.out.println("entered game over state now xdd");
+		
 		ChromeGame cg = (ChromeGame)game;
 		cg.Remove_Barriers();
 		cg.Remove_Enemies();
 		cg.Remove_Bullets();
 		cg.gb.clearFireArray();
 		cg.player.setPosition(cg.ScreenWidth/2, cg.ScreenHeight/3 * 2);
-		cg.player.health = 100;	
+		cg.player.health = cg.player.maxHealth;	
 		cg.player.SetChrome(1);
 		cg.Set_Current_Level(0);
 		cg.Create_Enemies(0); 
@@ -54,6 +58,9 @@ class GameOverState extends BasicGameState {
 	@Override
 	public void render(GameContainer container, StateBasedGame game,
 			Graphics g) throws SlickException {
+		
+		g.clear();
+		g.drawImage(ResourceManager.getImage(ChromeGame.YOU_DIED_RSC), 0, 0);
 
 
 	}

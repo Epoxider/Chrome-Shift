@@ -36,12 +36,13 @@ public class GameBoard {
         
 		Q = new PriorityQueue<Tile>(distanceComparator);
 
+		//int bot_margin = 100;
 		width = inWidth;
-		height = inHeight;
+		height = inHeight - inAnchorY;
 		columns = inColumns;
 		rows = inRows;
 		tileWidth = (float)width / (float)columns;
-		tileHeight = (float)height / (float)rows;
+		tileHeight = (float)(height) / (float)rows;
 		
 		// tile class takes (minX, minY, maxX, maxY, tile id, boolean impassable)
 		for (int y = 0; y < rows; y++) {	

@@ -12,11 +12,14 @@
 - **[7]** Create boss that paths and shoots at player
 - **[8]** Boss spawns enemies
 - **[9]** Create boss AoE Attack 
+- **[10]** Boss health bar graphics
+- **[11]** Add custom sounds 
+- **[12]** Add level transition screen 
+
 
 
 
 
 ## Open Issues ##
-- **[10]** combination color ultimate kill in each chrome to go ulti form
-- **[11]** Add timer for score 
+- **[13]**  
 
