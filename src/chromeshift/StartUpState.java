@@ -38,7 +38,7 @@ class StartUpState extends BasicGameState {
 		container.setSoundOn(true);
 		
 		if (!ResourceManager.getSound(ChromeGame.CHROME_SONG_RSC).playing()) {
-			ResourceManager.getSound(ChromeGame.CHROME_SONG_RSC).play(1, 0.5f);
+			ResourceManager.getSound(ChromeGame.CHROME_SONG_RSC).play(1, 0.2f);
 		}
 		
 		gameplayTut = false;
@@ -72,8 +72,14 @@ class StartUpState extends BasicGameState {
 		}
 		
 		//cg.player = new Player(cg.ScreenWidth /2, cg.ScreenHeight /3 * 2);
-		//g.drawString("Press space", 550, 200);
-		//g.drawImage(ResourceManager.getImage(ChromeGame.START_UP_RSC), 0, 0);
+		if (!showTitle) {
+			g.drawString("Press space to play", 50, 875);
+			g.drawString("Press 1 for gameplay tutorial", 50, 900);
+			g.drawString("Press 2 for controls", 50, 925);
+			g.drawString("Press 3 for chrome shift tutorial", 50, 950);
+			g.drawString("Press 4 for enemy types", 50, 975);
+		}
+		//g.drawString("Press space to play", 550, 200);
 		
 
 	}

@@ -86,9 +86,12 @@ class PlayingState extends BasicGameState {
 	}
 
 	public void render_health_bar(Graphics g, StateBasedGame game, Color hcolor, int left, int top, int width, int height, int phealthblocks, float healthPercent) {
-		//ChromeGame cg = (ChromeGame)game;
+		ChromeGame cg = (ChromeGame)game;
 		float margin = 2f;
 		
+		if (cg.player.godMode) {
+			hcolor = new Color(255, 255, 0, 255);
+		}
 		
 		Color blackColor = new Color(0, 0, 0, 255);
 		g.setColor(blackColor);
@@ -202,6 +205,10 @@ class PlayingState extends BasicGameState {
 			g.drawString("Boss Health " + cg.boss.health, 800, container.getHeight() - 75);
 		}
 		
+		if (cg.player.godMode) {
+			g.drawString("GODMODE ON", 305, 925);
+		}
+		
 		
 		
 		
@@ -280,7 +287,7 @@ class PlayingState extends BasicGameState {
 							spawnTileList.get(rand.nextInt(spawnTileList.size())));
 					totalEnemies--;
 				}
-				bossSpawnTimer = 10000;
+				bossSpawnTimer = 5000;
 			}
 		}
 			
@@ -317,19 +324,30 @@ class PlayingState extends BasicGameState {
 		
 		
 		//Code to move player
-		if( (input.isKeyDown(Input.KEY_W)) && (cg.player.getY() > 25) ) {			
+		if(input.isKeyDown(Input.KEY_W)) {			
 			new_velocity = new Vector(0f, -0.5f*speed);	
-		} else if ((input.isKeyDown(Input.KEY_A)) && 
-			       (cg.player.getX() > 25) ) {		
+		} else if (input.isKeyDown(Input.KEY_A)) {		
 			new_velocity = new Vector(-0.5f*speed, 0f);
-		} else if ((input.isKeyDown(Input.KEY_S)) && 
-				   (cg.player.getY() < cg.BoardHeight - 25 - 1)) {			
+		} else if (input.isKeyDown(Input.KEY_S)) {			
 			new_velocity = new Vector(0f, 0.5f*speed);
-		} else if ((input.isKeyDown(Input.KEY_D)) &&
-				   (cg.player.getX() < cg.ScreenWidth - 25 - 1)){			
+		} else if (input.isKeyDown(Input.KEY_D)){			
 			new_velocity = new Vector(0.5f*speed, 0f);
 		} else {
 			new_velocity = new Vector(0f,0f);
+		}
+		
+		if (input.isKeyDown(Input.KEY_A) && input.isKeyDown(Input.KEY_W)) {		
+			new_velocity = new Vector(-0.5f*speed, -0.5f);
+		} 		
+		if (input.isKeyDown(Input.KEY_D) && input.isKeyDown(Input.KEY_W)) {			
+			new_velocity = new Vector(0.5f, -0.5f*speed);
+		} 		
+		if (input.isKeyDown(Input.KEY_A) && input.isKeyDown(Input.KEY_S)){			
+			new_velocity = new Vector(-0.5f*speed, 0.5f);
+		} 		
+		if (input.isKeyDown(Input.KEY_D) && input.isKeyDown(Input.KEY_S)){	
+			System.out.println("registering s key was pressed during d down");
+			new_velocity = new Vector(0.5f*speed, 0.5f);
 		} 
 		cg.player.setVelocity(new_velocity);
 		
@@ -359,7 +377,7 @@ class PlayingState extends BasicGameState {
 			cooldownReady = false;
 		} */
 		
-		//USED TO TEST INCREASED GREEN CHROME SHOOTING CD
+		//USED TO TEST INCREASED YELLOW CHROME SHOOTING CD
 		if (cg.player.chromeColor == 4) {
 			if(input.isKeyPressed(Input.KEY_I) && YellowCDReady) {	
 				cg.player.Shoot(0, cg.player.chromeColor, cg);
@@ -482,7 +500,7 @@ class PlayingState extends BasicGameState {
 					float x_vector = tc.getMinPenetration().getX();
 					float y_vector = tc.getMinPenetration().getY();					
 					//enemy collides into tile from bottom
-					e.translate(x_vector, y_vector);
+					e.translate(x_vector*3f, y_vector*3f);
 				}
 			}
 			
@@ -763,9 +781,15 @@ class PlayingState extends BasicGameState {
 			cg.enterState(ChromeGame.LEVELTRANSSTATE);
 		}
 		
-		if (cg.player.health >= cg.player.maxHealth) {
-			cg.player.health = cg.player.maxHealth;
+		if (cg.player.godMode) {
+			cg.player.health = 2000;			
+		} else {
+			cg.player.maxHealth = 100;
+			if (cg.player.health >= cg.player.maxHealth) {
+				cg.player.health = cg.player.maxHealth;
+			}
 		}
+		
 		cg.player.update(delta);		
 	}
 
